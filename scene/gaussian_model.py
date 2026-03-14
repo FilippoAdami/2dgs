@@ -131,7 +131,17 @@ class GaussianModel:
 
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
 
-        dist2 = torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001)
+        #dist2 = torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001)
+        # --- Bypass AMD HIP simple-knn with CPU KDTree ---
+        import scipy.spatial
+        points_np = np.asarray(pcd.points)
+        tree = scipy.spatial.cKDTree(points_np)
+        # Query the 4 nearest points (k=4 because the first is the point itself)
+        dists, _ = tree.query(points_np, k=4)
+        # Calculate mean squared distance of the 3 actual neighbors
+        dist2_np = np.mean(dists[:, 1:]**2, axis=1)
+        dist2 = torch.clamp_min(torch.tensor(dist2_np, dtype=torch.float32, device="cuda"), 0.0000001)
+        # -------------------------------------------------
         scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 2)
         rots = torch.rand((fused_point_cloud.shape[0], 4), device="cuda")
 
