@@ -81,7 +81,7 @@ python3 render.py -s $SCENE_DIR -m $OUT_DIR -r 4 --skip_train --skip_test
 # 6. Semantic KD-Tree Projection
 # Maps the SAM 2 semantic IDs onto the vertices of the TSDF mesh for manipulation in Blender.
 python3 project_semantics_to_mesh.py \
-  --mesh $OUT_DIR/mesh/ours_5000/fusion/mesh.ply \
+  --mesh /$OUT_DIR/train/ours_5000/fuse_post.ply \
   --semantics $OUT_DIR/point_cloud/iteration_7000_semantic/point_cloud.ply \
   --out $OUT_DIR/semantic_mesh_blender.ply
 ```
