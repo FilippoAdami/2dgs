@@ -11,6 +11,7 @@ from scene import Scene, GaussianModel
 from arguments import ModelParams, PipelineParams, OptimizationParams
 
 def semantic_training():
+    # Config
     parser = ArgumentParser(description="Semantic Geometry Freeze")
     lp = ModelParams(parser)
     op = OptimizationParams(parser)
@@ -29,7 +30,6 @@ def semantic_training():
     train_cameras = scene.getTrainCameras()
     
     # 2. Override the original images with our new SAM 2 masks
-    # 2. Override the original images with our new SAM 2 masks
     print("Swapping COLMAP RGB data for SAM 2 Semantic Masks...")
     for cam in train_cameras:
         mask_path = os.path.join(args.sam_masks_dir, cam.image_name + ".png")
@@ -41,8 +41,7 @@ def semantic_training():
             # Extract the exact height and width the 2DGS backend is expecting
             _, target_h, target_w = cam.original_image.shape
             
-            # Resize the SAM 2 mask to match the camera perfectly.
-            # We MUST use INTER_NEAREST so the distinct semantic hex colors do not blend!
+            # Resize the SAM 2 mask to match the camera perfectly, using INTER_NEAREST so the distinct semantic hex colors do not blend
             mask_img = cv2.resize(mask_img, (target_w, target_h), interpolation=cv2.INTER_NEAREST)
             
             mask_tensor = torch.from_numpy(mask_img).float().cuda() / 255.0
@@ -57,12 +56,11 @@ def semantic_training():
     print("Locking 3D Geometry (XYZ, Scaling, Rotation, Opacity)...")
     gaussians.training_setup(opt)
     
-    # Mathematically sever the gradient graphs for spatial parameters
+    # Mathematically sever the gradient graphs for spatial parameters leaving only _features_dc (the base colors) active in the optimizer
     gaussians._xyz.requires_grad_(False)
     gaussians._scaling.requires_grad_(False)
     gaussians._rotation.requires_grad_(False)
     gaussians._opacity.requires_grad_(False)
-    # ONLY _features_dc (the base colors) remain active in the optimizer!
     
     bg_color = [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
@@ -71,6 +69,7 @@ def semantic_training():
     progress_bar = tqdm(range(1, 2001), desc="Painting Semantics")
     viewpoint_stack = None
     
+    # training loop to paint the geometry with the SAM 2 segmentations
     for iteration in range(1, 2001):
         if not viewpoint_stack:
             viewpoint_stack = train_cameras.copy()

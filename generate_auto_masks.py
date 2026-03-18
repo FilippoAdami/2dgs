@@ -98,7 +98,7 @@ for i, mask_data in enumerate(tracked_masks):
 print("Propagating all objects across the 3D capture sequence...")
 for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(inference_state):
     
-    # THE FIX: Directly map the sequence index to our original filename array
+    # Directly map the sequence index to our original filename array
     orig_img_name = original_frames[out_frame_idx]
     
     h, w = image_np.shape[:2]

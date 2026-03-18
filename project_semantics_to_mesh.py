@@ -5,6 +5,7 @@ import numpy.lib.recfunctions as rfn
 from plyfile import PlyData, PlyElement
 from scipy.spatial import cKDTree
 
+# Config
 parser = argparse.ArgumentParser(description="KD-Tree Semantic Mesh Projection")
 parser.add_argument("--mesh", type=str, required=True, help="Path to the uncolored master TSDF mesh")
 parser.add_argument("--semantics", type=str, required=True, help="Path to the 7000-iteration painted point cloud")

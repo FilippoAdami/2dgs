@@ -5,6 +5,7 @@ import argparse
 from glob import glob
 
 def batch_extract_meshes():
+    # Config
     parser = argparse.ArgumentParser(description="Batch TSDF Mesh Extraction for Isolated Objects")
     parser.add_argument("-s", "--source_path", type=str, required=True, help="Path to the original COLMAP dataset")
     parser.add_argument("-m", "--model_path", type=str, required=True, help="Path to the 5K trained model directory")
@@ -21,6 +22,7 @@ def batch_extract_meshes():
 
     print(f"Found {len(ply_files)} isolated point clouds. Commencing batch TSDF extraction...")
 
+    # Main loop to process each isolated object
     for ply_path in ply_files:
         obj_name = os.path.basename(ply_path).replace(".ply", "")
         print(f"\n--- Processing {obj_name} ---")
@@ -30,7 +32,7 @@ def batch_extract_meshes():
         mock_pc_dir = os.path.join(mock_dir, "point_cloud", "iteration_5000")
         os.makedirs(mock_pc_dir, exist_ok=True)
 
-        # 2. Copy the critical configuration files so the C++ backend doesn't crash
+        # 2. Copy the critical configuration files
         try:
             shutil.copy(os.path.join(args.model_path, "cameras.json"), mock_dir)
             if os.path.exists(os.path.join(args.model_path, "cfg_args")):
