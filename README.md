@@ -74,16 +74,9 @@ python3 train_semantic.py -s $SCENE_DIR -m $OUT_DIR --sam_masks_dir $SCENE_DIR/m
 # Executes K-Means clustering on the semantic model to rip the original RGB geometry into standalone objects.
 python3 split_original_rgb.py -m $OUT_DIR
 
-# 5. TSDF Mesh Extraction (For Traditional 3D Software)
-# Uses the C++ backend to fuse the 2D surfels into a watertight polygonal mesh.
-python3 render.py -s $SCENE_DIR -m $OUT_DIR -r 4 --skip_train --skip_test
-
-# 6. Semantic KD-Tree Projection
-# Maps the SAM 2 semantic IDs onto the vertices of the TSDF mesh for manipulation in Blender.
-python3 project_semantics_to_mesh.py \
-  --mesh /$OUT_DIR/train/ours_5000/fuse_post.ply \
-  --semantics $OUT_DIR/point_cloud/iteration_7000_semantic/point_cloud.ply \
-  --out $OUT_DIR/semantic_mesh_blender.ply
+# 5. Batch TSDF Mesh Extraction (For Traditional 3D Software)
+# Automates the native C++ TSDF backend to generate clean, independent polygon meshes for each isolated object, preventing boundary hallucination.
+python3 extract_isolated_meshes.py -s $SCENE_DIR -m $OUT_DIR
 ```
 
 ## Visualization & Manipulation
@@ -98,9 +91,9 @@ This architecture supports two fundamentally different mathematical representati
 
 **2. Traditional Polygonal Mesh (Blender / Unity)**
 
-  * **Output Location:** `[OUT_DIR]/semantic_mesh_blender.ply`
-  * **Mechanism:** Standard 3D software cannot natively interpret volumetric Gaussian parameters. Step 5 and 6 of the pipeline fuse the surfels using TSDF integration into a standard polygonal mesh (vertices and faces), and project the semantic IDs into the vertex color layer.
-  * **Workflow:** Import the single `semantic_mesh_blender.ply` into Blender. By mapping the Color Attribute (Vertex Colors) to the Principled BSDF material, the semantic tracking becomes instantly visible. You can utilize Geometry Nodes to dynamically mask, delete, or physically split the continuous mesh based strictly on these specific vertex color IDs, yielding fully non-destructive manipulation.
+  * **Output Location:** `[OUT_DIR]/isolated_meshes/`
+  * **Mechanism:** Generating a single master mesh causes the TSDF algorithm to hallucinate continuous geometric "webs" between touching objects, leading to semantic color bleeding at the boundaries. Instead, Step 5 iterates through the isolated point clouds and computes a watertight TSDF mesh for each object independently.
+  * **Workflow:** Import the generated `*_mesh.ply` files directly into standard 3D software like Blender (`File > Import > Stanford (.ply)`). Because they are standard polygonal meshes with native vertex colors, they render immediately without any complex node setups or material filters. You can import the specific objects you want, and they will slot perfectly into their exact physical coordinates.
 
 <img width="877" height="701" alt="image" src="https://github.com/user-attachments/assets/89486b84-cc30-432c-820e-be7ac127cfe7" />
 
